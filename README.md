@@ -1,27 +1,25 @@
-# Bengkel Pro SaaS
+# Bengkel Pro Saas
 
-Sistem manajemen bengkel terpadu. Fitur: pelacakan servis, stok suku cadang, penugasan mekanik, sistem tagihan.
+ðxï¸ Sistem Manajemen Bengkel Saas Enterprise - World-Class Enterprise v5.0
 
-## Stack
-- Backend: Express.js
-- Database: Turso SQLite
-- Frontend: Tailwind CSS
-- Auth: JWT
+## Pages
+- **/** - Landing Page (Marketing, Hero, Features, Pricing, Testimonials)
+- **/login** - Login & Register Page
+- **/dashboard** - Main Dashboard (CRUD, Analytics, Charts)
 
-## Setup
-1. `npm install`
-2. Set `TURSO_DB_URL`, `TURSO_AUTH_TOKEN` di `.env`.
-3. `node server.js`
+## Features & Architecture
+- **Landing Page**: Scroll animations, typing effects, parallax, glassmorphism
+- **Payment Gateway**: Midtrans & Xendit QRIS / VA + Webhook Verification
+- **Security**: Express Rate Limiter (100 req/min) & Helmet Security
+- **Analytics**: Chart.js Interactive Graph Visualization
+- **Export**: Export CSV/Excel & Print PDF Report
+- **Multi-Tenant**: Multi-Tenant & Multi-Branch Ready Schema
+- **Database**: Turso Cloud SQLite Database
 
-## API Endpoints
-- `GET /api/services` - Daftar servis
-- `POST /api/services` - Tambah servis
-- `GET /api/inventory` - Daftar suku cadang
-- `POST /api/inventory` - Tambah suku cadang
+## Entities
+- **Booking Servis**: No. Polisi/Plat, Nama Pemilik, Tipe Kendaraan, Jenis Servis, Teknisi/Mekanik, Biaya (Rp), Status
+- **Inventaris Sparepart**: Kode Part, Nama Item, Kategori, Harga (Rp), Stok Unit
+- **Data Teknisi**: Nama Teknisi, Spesialisasi, No. HP, Status
 
-## Struktur Database
-- `services`: vehicle_plate, customer_name, service_type, mechanic, cost, status.
-- `inventory`: part_name, stock, price.
-
-## Lisensi
-MIT.
+---
+*Built by E.D.G.A.R Senior Principal Engineer Agent - EdgarTech Corp*
