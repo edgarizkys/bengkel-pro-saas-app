@@ -1,115 +1,475 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bengkel Pro Saas - Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bengkel Pro Saas - Enterprise Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>body{font-family:system-ui,sans-serif;background:#0f172a;}</style>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+        :root { --gf: #d97706; --gt: #ea580c; }
+        .glass { background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(30,41,59,.88)); border: 1px solid rgba(148,163,184,.12); backdrop-filter: blur(16px); }
+        .stat-card { background: linear-gradient(135deg, rgba(15,23,42,.95), rgba(30,41,59,.9)); border: 1px solid rgba(148,163,184,.1); transition: transform .2s, border-color .2s; }
+        .stat-card:hover { transform: translateY(-3px); border-color: #d9770680; }
+        .btn-primary { background: linear-gradient(135deg, #d97706, #ea580c); color: #fff; padding: 0.6rem 1.25rem; border-radius: 0.75rem; font-weight: 700; transition: all .2s; box-shadow: 0 4px 14px #d9770640; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 50; display: flex; align-items: center; justify-content: center; }
+        .fade-in { animation: fadeIn .25s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        [x-cloak] { display: none !important; }
+    </style>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'gf': '#d97706', 'gt': '#ea580c' } } } };
+    </script>
 </head>
-<body class="bg-slate-950 text-white min-h-screen" x-data="dashboard()">
-    <nav class="bg-slate-900/80 border-b border-slate-800 px-6 py-3 flex justify-between items-center sticky top-0 z-50 backdrop-blur-xl">
-        <h1 class="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">ðxï¸ Bengkel Pro Saas</h1>
-        <div class="flex gap-2"><button @click="activeTab='servis'" :class="activeTab==='servis'?' bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-lg':'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-xl text-xs transition-all">Booking Servis</button><button @click="activeTab='sparepart'" :class="activeTab==='sparepart'?' bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-lg':'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-xl text-xs transition-all">Inventaris Sparepart</button><button @click="activeTab='teknisi'" :class="activeTab==='teknisi'?' bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-lg':'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-xl text-xs transition-all">Data Teknisi</button></div>
+<body class="bg-slate-950 text-slate-100 min-h-screen" x-data="dashboardApp()" x-init="initAuth()">
+
+    <!-- TOP NAVIGATION -->
+    <nav class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gf to-gt text-lg font-extrabold text-white shadow-lg">
+                    ðxï¸
+                </a>
+                <div>
+                    <h1 class="text-base font-extrabold text-white">Bengkel Pro Saas</h1>
+                    <p class="text-[10px] text-slate-400">Enterprise Operations Dashboard</p>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="hidden md:flex items-center gap-2 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
+                
+            <button @click="activeTab = 'servis'; search = '';"
+                    :class="activeTab === 'servis' ? 'bg-gradient-to-r from-gf to-gt text-white font-bold shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                <span>Booking Servis</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300" x-text="(data['servis'] || []).length"></span>
+            </button>
+            <button @click="activeTab = 'sparepart'; search = '';"
+                    :class="activeTab === 'sparepart' ? 'bg-gradient-to-r from-gf to-gt text-white font-bold shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                <span>Inventaris Sparepart</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300" x-text="(data['sparepart'] || []).length"></span>
+            </button>
+            <button @click="activeTab = 'teknisi'; search = '';"
+                    :class="activeTab === 'teknisi' ? 'bg-gradient-to-r from-gf to-gt text-white font-bold shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                <span>Data Teknisi</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300" x-text="(data['teknisi'] || []).length"></span>
+            </button>
+            </div>
+
+            <!-- USER PROFILE & LOGOUT -->
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-xs text-slate-400 hover:text-white transition-colors hidden sm:block">Landing Page</a>
+                <div class="h-4 w-px bg-slate-800 hidden sm:block"></div>
+                <div class="flex items-center gap-2.5 glass px-3 py-1.5 rounded-xl border border-slate-800">
+                    <div class="w-7 h-7 rounded-full bg-gradient-to-br from-gf to-gt flex items-center justify-center text-xs font-bold text-white" x-text="user.name ? user.name[0].toUpperCase() : 'U'"></div>
+                    <div class="text-left hidden sm:block">
+                        <div class="text-xs font-bold text-white" x-text="user.name || 'User Admin'"></div>
+                        <div class="text-[10px] text-slate-400" x-text="user.email || 'admin@domain.com'"></div>
+                    </div>
+                </div>
+                <button @click="logout()" title="Keluar / Logout" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- MOBILE TABS -->
+        <div class="md:hidden flex items-center gap-2 overflow-x-auto px-4 py-2 border-t border-slate-800/50">
+            
+            <button @click="activeTab = 'servis'; search = '';"
+                    :class="activeTab === 'servis' ? 'bg-gradient-to-r from-gf to-gt text-white font-bold shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                <span>Booking Servis</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300" x-text="(data['servis'] || []).length"></span>
+            </button>
+            <button @click="activeTab = 'sparepart'; search = '';"
+                    :class="activeTab === 'sparepart' ? 'bg-gradient-to-r from-gf to-gt text-white font-bold shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                <span>Inventaris Sparepart</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300" x-text="(data['sparepart'] || []).length"></span>
+            </button>
+            <button @click="activeTab = 'teknisi'; search = '';"
+                    :class="activeTab === 'teknisi' ? 'bg-gradient-to-r from-gf to-gt text-white font-bold shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                <span>Data Teknisi</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300" x-text="(data['teknisi'] || []).length"></span>
+            </button>
+        </div>
     </nav>
-    <main class="max-w-7xl mx-auto p-6 space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <template x-for="s in stats" :key="s.key">
-                <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5">
-                    <p class="text-xs text-slate-400" x-text="s.label"></p>
-                    <h3 class="text-2xl font-bold" x-text="(data[s.key] || []).length"></h3>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- STAT CARDS OVERVIEW -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <template x-for="e in entitiesSchema" :key="e.name">
+                <div class="stat-card p-5 rounded-2xl glass flex items-center justify-between cursor-pointer" @click="activeTab = e.name; search = '';">
+                    <div>
+                        <div class="text-xs font-semibold text-slate-400" x-text="e.label"></div>
+                        <div class="text-2xl font-extrabold text-white mt-1" x-text="(data[e.name] || []).length"></div>
+                        <div class="text-[10px] text-emerald-400 mt-1 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Terhubung ke Server DB
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg">ðxï¸</div>
                 </div>
             </template>
         </div>
+
+        <!-- DYNAMIC SECTIONS -->
         
-        <div x-show="activeTab==='servis'" class="space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white">ðxï¸ Booking Servis</h2>
-                <button @click="openCreateModal('servis')" class="bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold text-xs px-5 py-2 rounded-xl">Tambah Booking Servis</button>
-            </div>
-            <div class="glass-enhanced border border-slate-800 rounded-2xl overflow-hidden">
-                <table class="w-full"><thead class="bg-slate-900/50"><tr><th class="p-3 text-left text-[10px] uppercase tracking-wider">No. Polisi/Plat</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Nama Pemilik</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Tipe Kendaraan</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Jenis Servis</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Teknisi/Mekanik</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Biaya (Rp)</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Status</th></tr></thead>
-                <tbody><template x-for="item in servis" :key="item.id"><tr class="border-t border-slate-800/50 hover:bg-slate-800/30"><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.nopol"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.pemilik"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.tipe"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.layanan"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.teknisi"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.biaya"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.status"></td>
-                <td class="p-3"><button @click="deleteItem('servis', item.id)" class="text-red-400 text-xs">Hapus</button></td>
-                </tr></template></tbody></table>
-            </div>
-        </div>
-        <div x-show="activeTab==='sparepart'" class="space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white">ðxï¸ Inventaris Sparepart</h2>
-                <button @click="openCreateModal('sparepart')" class="bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold text-xs px-5 py-2 rounded-xl">Tambah Inventaris Sparepart</button>
-            </div>
-            <div class="glass-enhanced border border-slate-800 rounded-2xl overflow-hidden">
-                <table class="w-full"><thead class="bg-slate-900/50"><tr><th class="p-3 text-left text-[10px] uppercase tracking-wider">Kode Part</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Nama Item</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Kategori</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Harga (Rp)</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Stok Unit</th></tr></thead>
-                <tbody><template x-for="item in sparepart" :key="item.id"><tr class="border-t border-slate-800/50 hover:bg-slate-800/30"><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.kode"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.nama"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.kategori"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.harga"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.stok"></td>
-                <td class="p-3"><button @click="deleteItem('sparepart', item.id)" class="text-red-400 text-xs">Hapus</button></td>
-                </tr></template></tbody></table>
-            </div>
-        </div>
-        <div x-show="activeTab==='teknisi'" class="space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white">ðxï¸ Data Teknisi</h2>
-                <button @click="openCreateModal('teknisi')" class="bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold text-xs px-5 py-2 rounded-xl">Tambah Data Teknisi</button>
-            </div>
-            <div class="glass-enhanced border border-slate-800 rounded-2xl overflow-hidden">
-                <table class="w-full"><thead class="bg-slate-900/50"><tr><th class="p-3 text-left text-[10px] uppercase tracking-wider">Nama Teknisi</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Spesialisasi</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">No. HP</th><th class="p-3 text-left text-[10px] uppercase tracking-wider">Status</th></tr></thead>
-                <tbody><template x-for="item in teknisi" :key="item.id"><tr class="border-t border-slate-800/50 hover:bg-slate-800/30"><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.nama"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.spesialis"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.no_hp"></td><td class="p-3 font-semibold text-slate-200 text-xs" x-text="item.status"></td>
-                <td class="p-3"><button @click="deleteItem('teknisi', item.id)" class="text-red-400 text-xs">Hapus</button></td>
-                </tr></template></tbody></table>
-            </div>
-        </div>
-    </main>
-    <div x-show="showModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal=false">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-white mb-4">Tambah Data</h3>
-            <template x-for="f in modalFields" :key="f.key">
-                <div class="mb-3">
-                    <label class="text-xs text-slate-400" x-text="f.label"></label>
-                    <input :type="f.type === 'number' ? 'number' : 'text'" x-model="newItem[f.key]" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white text-sm mt-1">
+        <div x-show="activeTab === 'servis'" class="space-y-4 fade-in">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass p-4 rounded-2xl border border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gf to-gt flex items-center justify-center text-lg shadow-md">ðxï¸</div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Kelola Data Booking Servis</h2>
+                        <p class="text-xs text-slate-400">Total <span x-text="filteredData('servis').length"></span> item terdaftar</p>
+                    </div>
                 </div>
-            </template>
-            <div class="flex gap-2 mt-4">
-                <button @click="saveItem()" class="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-4 py-2 rounded-xl text-sm font-bold">Simpan</button>
-                <button @click="showModal=false" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm">Batal</button>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <input type="text" x-model="search" placeholder="Cari booking servis..." class="bg-slate-900 border border-slate-700 text-xs text-white rounded-xl px-3 py-2 pl-8 focus:outline-none focus:border-gf w-44 sm:w-56">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button @click="exportCSV('servis')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-700">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Export CSV
+                    </button>
+                    <button @click="openAddModal('servis')" class="btn-primary text-xs flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Booking Servis
+                    </button>
+                </div>
             </div>
+
+            <!-- TABLE -->
+            <div class="glass border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">No. Polisi/Plat</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Nama Pemilik</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Tipe Kendaraan</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Jenis Servis</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Teknisi/Mekanik</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Biaya (Rp)</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
+                                <th class="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <template x-for="(item, index) in filteredData('servis')" :key="item.id || index">
+                                <tr class="hover:bg-slate-800/30 transition-colors">
+                                    <td class="p-3 font-medium text-slate-200 text-xs" x-text="item.nopol || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.pemilik || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.tipe || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.layanan || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.teknisi || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.biaya || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.status || '-'"></td>
+                                    <td class="p-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button @click="openEditModal('servis', item)" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg text-xs font-semibold transition-all">
+                                                Edit
+                                            </button>
+                                            <button @click="deleteItem('servis', item)" class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 rounded-lg text-xs font-semibold transition-all">
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredData('servis').length === 0">
+                                <td colspan="8" class="p-8 text-center text-slate-500 text-xs">
+                                    Tidak ada data booking servis yang ditemukan.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div x-show="activeTab === 'sparepart'" class="space-y-4 fade-in">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass p-4 rounded-2xl border border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gf to-gt flex items-center justify-center text-lg shadow-md">ðxï¸</div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Kelola Data Inventaris Sparepart</h2>
+                        <p class="text-xs text-slate-400">Total <span x-text="filteredData('sparepart').length"></span> item terdaftar</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <input type="text" x-model="search" placeholder="Cari inventaris sparepart..." class="bg-slate-900 border border-slate-700 text-xs text-white rounded-xl px-3 py-2 pl-8 focus:outline-none focus:border-gf w-44 sm:w-56">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button @click="exportCSV('sparepart')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-700">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Export CSV
+                    </button>
+                    <button @click="openAddModal('sparepart')" class="btn-primary text-xs flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Inventaris Sparepart
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="glass border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Kode Part</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Nama Item</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Kategori</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Harga (Rp)</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Stok Unit</th>
+                                <th class="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <template x-for="(item, index) in filteredData('sparepart')" :key="item.id || index">
+                                <tr class="hover:bg-slate-800/30 transition-colors">
+                                    <td class="p-3 font-medium text-slate-200 text-xs" x-text="item.kode || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.nama || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.kategori || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.harga || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.stok || '-'"></td>
+                                    <td class="p-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button @click="openEditModal('sparepart', item)" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg text-xs font-semibold transition-all">
+                                                Edit
+                                            </button>
+                                            <button @click="deleteItem('sparepart', item)" class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 rounded-lg text-xs font-semibold transition-all">
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredData('sparepart').length === 0">
+                                <td colspan="6" class="p-8 text-center text-slate-500 text-xs">
+                                    Tidak ada data inventaris sparepart yang ditemukan.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div x-show="activeTab === 'teknisi'" class="space-y-4 fade-in">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass p-4 rounded-2xl border border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gf to-gt flex items-center justify-center text-lg shadow-md">ðxï¸</div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Kelola Data Data Teknisi</h2>
+                        <p class="text-xs text-slate-400">Total <span x-text="filteredData('teknisi').length"></span> item terdaftar</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <input type="text" x-model="search" placeholder="Cari data teknisi..." class="bg-slate-900 border border-slate-700 text-xs text-white rounded-xl px-3 py-2 pl-8 focus:outline-none focus:border-gf w-44 sm:w-56">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button @click="exportCSV('teknisi')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-700">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Export CSV
+                    </button>
+                    <button @click="openAddModal('teknisi')" class="btn-primary text-xs flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Data Teknisi
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="glass border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Nama Teknisi</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Spesialisasi</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">No. HP</th><th class="p-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
+                                <th class="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <template x-for="(item, index) in filteredData('teknisi')" :key="item.id || index">
+                                <tr class="hover:bg-slate-800/30 transition-colors">
+                                    <td class="p-3 font-medium text-slate-200 text-xs" x-text="item.nama || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.spesialis || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.no_hp || '-'"></td><td class="p-3 font-medium text-slate-200 text-xs" x-text="item.status || '-'"></td>
+                                    <td class="p-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button @click="openEditModal('teknisi', item)" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg text-xs font-semibold transition-all">
+                                                Edit
+                                            </button>
+                                            <button @click="deleteItem('teknisi', item)" class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 rounded-lg text-xs font-semibold transition-all">
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredData('teknisi').length === 0">
+                                <td colspan="5" class="p-8 text-center text-slate-500 text-xs">
+                                    Tidak ada data data teknisi yang ditemukan.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- UNIFIED CRUD MODAL (ADD / EDIT) -->
+    <div x-show="showModal" x-cloak class="modal-overlay fade-in" @click.self="showModal = false">
+        <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-700 shadow-2xl relative" @click.stop>
+            <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gf to-gt flex items-center justify-center text-sm font-bold text-white">✏️</div>
+                    <h3 class="text-base font-bold text-white" x-text="editItem ? 'Edit Data ' + activeEntityLabel : 'Tambah Data ' + activeEntityLabel"></h3>
+                </div>
+                <button @click="showModal = false" class="text-slate-400 hover:text-white text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <form @submit.prevent="saveModal()">
+                <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                    <template x-for="f in activeFields" :key="f.key">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1" x-text="f.label"></label>
+                            <input :type="f.type === 'number' ? 'number' : 'text'"
+                                   x-model="form[f.key]"
+                                   :placeholder="'Masukkan ' + f.label.toLowerCase()"
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-gf focus:ring-1 focus:ring-gf transition-all">
+                        </div>
+                    </template>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
+                    <button type="button" @click="showModal = false" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn-primary text-xs">
+                        <span x-text="editItem ? 'Simpan Perubahan' : 'Tambah Sekarang'"></span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div x-show="toast.show" x-cloak class="fixed bottom-6 right-6 z-50 glass px-4 py-3 rounded-2xl border border-emerald-500/30 text-xs font-bold text-emerald-400 shadow-2xl flex items-center gap-2.5 fade-in">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span x-text="toast.message"></span>
+    </div>
+
     <script>
-    function dashboard() {
-        return {
-            activeTab: "servis",
-            stats: [{ key: "servis", label: "Booking Servis" }, { key: "sparepart", label: "Inventaris Sparepart" }, { key: "teknisi", label: "Data Teknisi" }],
-            data: {"servis": [], "sparepart": [], "teknisi": []},
-            newItem: {},
-            showModal: false,
-            _modalEntity: null,
-            get modalFields() {
-                const entity = {"servis": [], "sparepart": [], "teknisi": [] };
-                for (const [k, v] of Object.entries(this.data)) {
-                    if (k === this._modalEntity && v.length > 0) {
-                        const sample = v[0];
-                        return Object.keys(sample).filter(k => k !== 'id').map(k => ({ key: k, label: k, type: typeof sample[k] === 'number' ? 'number' : 'text' }));
+        function dashboardApp() {
+            return {
+                user: { name: 'User Admin', email: 'admin@domain.com' },
+                entitiesSchema: [{"name": "servis", "label": "Booking Servis", "fields": [{"key": "nopol", "label": "No. Polisi/Plat", "type": "text"}, {"key": "pemilik", "label": "Nama Pemilik", "type": "text"}, {"key": "tipe", "label": "Tipe Kendaraan", "type": "text"}, {"key": "layanan", "label": "Jenis Servis", "type": "text"}, {"key": "teknisi", "label": "Teknisi/Mekanik", "type": "text"}, {"key": "biaya", "label": "Biaya (Rp)", "type": "number"}, {"key": "status", "label": "Status", "type": "text"}]}, {"name": "sparepart", "label": "Inventaris Sparepart", "fields": [{"key": "kode", "label": "Kode Part", "type": "text"}, {"key": "nama", "label": "Nama Item", "type": "text"}, {"key": "kategori", "label": "Kategori", "type": "text"}, {"key": "harga", "label": "Harga (Rp)", "type": "number"}, {"key": "stok", "label": "Stok Unit", "type": "number"}]}, {"name": "teknisi", "label": "Data Teknisi", "fields": [{"key": "nama", "label": "Nama Teknisi", "type": "text"}, {"key": "spesialis", "label": "Spesialisasi", "type": "text"}, {"key": "no_hp", "label": "No. HP", "type": "text"}, {"key": "status", "label": "Status", "type": "text"}]}],
+                data: {"servis": [{"id": 1, "nopol": "Contoh No. Polisi/Plat", "pemilik": "Contoh Nama Pemilik", "tipe": "Contoh Tipe Kendaraan", "layanan": "Contoh Jenis Servis", "teknisi": "Contoh Teknisi/Mekanik", "biaya": 100000, "status": "Contoh Status"}], "sparepart": [{"id": 1, "kode": "Contoh Kode Part", "nama": "Contoh Nama Item", "kategori": "Contoh Kategori", "harga": 100000, "stok": 100000}], "teknisi": [{"id": 1, "nama": "Contoh Nama Teknisi", "spesialis": "Contoh Spesialisasi", "no_hp": "Contoh No. HP", "status": "Contoh Status"}]},
+                activeTab: 'servis',
+                search: '',
+                showModal: false,
+                editItem: null,
+                form: {},
+                toast: { show: false, message: '' },
+
+                initAuth() {
+                    const token = localStorage.getItem('app_auth_token');
+                    if (!token) {
+                        // Fallback fallback login for demo if token not set
+                        localStorage.setItem('app_auth_token', 'demo_' + Date.now());
+                        localStorage.setItem('app_user', JSON.stringify({ email: 'admin@domain.com', name: 'User Admin' }));
                     }
+                    const u = localStorage.getItem('app_user');
+                    if (u) {
+                        try { this.user = JSON.parse(u); } catch(e) {}
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('app_auth_token');
+                    localStorage.removeItem('app_user');
+                    window.location.href = 'login.html';
+                },
+
+                get activeEntityObj() {
+                    return this.entitiesSchema.find(e => e.name === this.activeTab) || this.entitiesSchema[0];
+                },
+
+                get activeEntityLabel() {
+                    return this.activeEntityObj ? this.activeEntityObj.label : '';
+                },
+
+                get activeFields() {
+                    return this.activeEntityObj ? this.activeEntityObj.fields : [];
+                },
+
+                filteredData(ename) {
+                    const list = this.data[ename] || [];
+                    if (!this.search.trim()) return list;
+                    const q = this.search.toLowerCase();
+                    return list.filter(item => {
+                        return Object.values(item).some(val => String(val).toLowerCase().includes(q));
+                    });
+                },
+
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                },
+
+                openAddModal(ename) {
+                    this.activeTab = ename;
+                    this.editItem = null;
+                    this.form = {};
+                    this.activeFields.forEach(f => {
+                        this.form[f.key] = f.type === 'number' ? 0 : '';
+                    });
+                    this.showModal = true;
+                },
+
+                openEditModal(ename, item) {
+                    this.activeTab = ename;
+                    this.editItem = item;
+                    this.form = { ...item };
+                    this.showModal = true;
+                },
+
+                saveModal() {
+                    const list = this.data[this.activeTab] || [];
+                    if (this.editItem) {
+                        // Update
+                        const idx = list.findIndex(i => i.id === this.editItem.id);
+                        if (idx !== -1) {
+                            list[idx] = { ...this.form };
+                        }
+                        this.showToast('Data ' + this.activeEntityLabel + ' berhasil diperbarui!');
+                    } else {
+                        // Create
+                        const newItem = { ...this.form, id: Date.now() };
+                        list.unshift(newItem);
+                        this.showToast('Data ' + this.activeEntityLabel + ' baru berhasil ditambahkan!');
+                    }
+                    this.data[this.activeTab] = list;
+                    this.showModal = false;
+                },
+
+                deleteItem(ename, item) {
+                    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                        this.data[ename] = (this.data[ename] || []).filter(i => i.id !== item.id);
+                        this.showToast('Data berhasil dihapus!');
+                    }
+                },
+
+                exportCSV(ename) {
+                    const list = this.data[ename] || [];
+                    if (!list.length) return alert('Tidak ada data untuk diexport!');
+                    const headers = Object.keys(list[0]).join(',');
+                    const rows = list.map(r => Object.values(r).map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+                    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(headers + '\n' + rows);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', csvContent);
+                    link.setAttribute('download', ename + '_export.csv');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 }
-                return [];
-            },
-            openCreateModal(entity) {
-                this._modalEntity = entity;
-                this.newItem = {};
-                this.showModal = true;
-            },
-            saveItem() {
-                if (this._modalEntity && this.data[this._modalEntity]) {
-                    this.data[this._modalEntity].push({...this.newItem, id: Date.now() });
-                }
-                this.showModal = false;
-                this.newItem = {};
-            },
-            deleteItem(entity, id) {
-                this.data[entity] = this.data[entity].filter(i => i.id !== id);
             }
         }
-    }
     </script>
 </body>
 </html>
