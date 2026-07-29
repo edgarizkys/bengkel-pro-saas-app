@@ -1,43 +1,19 @@
-// config/database.js
 const { createClient } = require('@libsql/client');
 
 const tursoClient = createClient({
-    url: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN
+    url: process.env.TURSO_DATABASE_URL || 'libsql://edgartech-db-edgarizkys.turso.io',
+    authToken: process.env.TURSO_AUTH_TOKEN || ''
 });
 
 async function initializeDatabase() {
     try {
-        await tursoClient.execute(`
-            CREATE TABLE IF NOT EXISTS services (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tenant_id TEXT DEFAULT 'default',
-                vehicle_plate TEXT NOT NULL,
-                customer_name TEXT NOT NULL,
-                service_type TEXT NOT NULL,
-                mechanic TEXT,
-                cost REAL DEFAULT 0,
-                status TEXT DEFAULT 'pending',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await tursoClient.execute(`
-            CREATE TABLE IF NOT EXISTS inventory (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tenant_id TEXT DEFAULT 'default',
-                part_name TEXT NOT NULL,
-                stock INTEGER DEFAULT 0,
-                price REAL DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        console.log('[DB] Tables initialized: services, inventory');
-    } catch(e) {
-        console.error('[DB] Init error:', e.message);
-        process.exit(1);
-    }
+        await tursoClient.execute(`CREATE TABLE IF NOT EXISTS servis (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT DEFAULT 'default', nopol TEXT NOT NULL, pemilik TEXT NOT NULL, tipe TEXT NOT NULL, layanan TEXT NOT NULL, teknisi TEXT NOT NULL, biaya REAL NOT NULL, status TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        console.log('[DB] Table servis (Multi-Tenant) ready');
+        await tursoClient.execute(`CREATE TABLE IF NOT EXISTS sparepart (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT DEFAULT 'default', kode TEXT NOT NULL, nama TEXT NOT NULL, kategori TEXT NOT NULL, harga REAL NOT NULL, stok REAL NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        console.log('[DB] Table sparepart (Multi-Tenant) ready');
+        await tursoClient.execute(`CREATE TABLE IF NOT EXISTS teknisi (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT DEFAULT 'default', nama TEXT NOT NULL, spesialis TEXT NOT NULL, no_hp TEXT NOT NULL, status TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        console.log('[DB] Table teknisi (Multi-Tenant) ready');
+    } catch(e) { console.log('DB Notice:', e.message); }
 }
 
 module.exports = { tursoClient, initializeDatabase };
