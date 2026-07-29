@@ -1,6 +1,6 @@
 # Bengkel Pro Saas
 
-ðxï¸ Sistem Manajemen Bengkel Saas Enterprise - World-Class Enterprise v5.0
+🔧 Sistem Manajemen Bengkel Saas Enterprise - World-Class Enterprise v5.0
 
 ## Pages
 - **/** - Landing Page (Marketing, Hero, Features, Pricing, Testimonials)
