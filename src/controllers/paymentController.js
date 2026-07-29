@@ -1,57 +1,38 @@
-// controllers/paymentController.js
 const paymentService = require('../services/paymentService');
-const db = require('../db/turso');
 
-exports.processPayment = async (req, res) => {
+exports.createQris = async (req, res) => {
     try {
-        const { orderId, amount, method, bank, tenantId } = req.body;
-        
-        if (!tenantId) return res.status(400).json({ error: 'Tenant ID wajib' });
-
-        let result;
-        if (method === 'QRIS') {
-            result = await paymentService.createQrisTransaction(orderId, amount);
-        } else if (method === 'VA') {
-            result = await paymentService.createVirtualAccountTransaction(orderId, amount, bank);
-        } else {
-            return res.status(400).json({ error: 'Metode tidak valid' });
+        const { orderId, amount, customerInfo } = req.body;
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid amount' });
         }
+        const result = await paymentService.createQrisTransaction(orderId || Date.now(), amount, customerInfo);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
 
-        await db.execute({
-            sql: 'INSERT INTO payments (tenant_id, order_id, amount, status, provider_ref) VALUES (?, ?, ?, ?, ?)',
-            args: [tenantId, orderId, amount, 'pending', result.referenceNo || result.vaNumber]
-        });
-
-        res.status(200).json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+exports.createVa = async (req, res) => {
+    try {
+        const { orderId, amount, bank } = req.body;
+        const result = await paymentService.createVirtualAccountTransaction(orderId || Date.now(), amount, bank || 'BCA');
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 };
 
 exports.handleWebhook = async (req, res) => {
-    const signature = req.headers['x-payment-signature'];
-    
-    if (!paymentService.verifyWebhookSignature(req.body, signature)) {
-        return res.status(403).json({ error: 'Signature tidak valid' });
-    }
-
-    const { order_id, status } = req.body;
-    
     try {
-        await db.execute({
-            sql: 'UPDATE payments SET status = ? WHERE order_id = ?',
-            args: [status, order_id]
-        });
-        
-        if (status === 'settlement') {
-            await db.execute({
-                sql: 'UPDATE services SET status = ? WHERE id = ?',
-                args: ['paid', order_id]
-            });
+        const signature = req.headers['x-callback-signature'] || req.headers['x-signature'];
+        const isValid = paymentService.verifyWebhookSignature(req.body, signature);
+        if (!isValid) {
+            return res.status(403).json({ error: 'Invalid Payment Webhook Signature' });
         }
-        
-        res.status(200).send('OK');
-    } catch (err) {
-        res.status(500).json({ error: 'Gagal update status' });
+        console.log('[PAYMENT WEBHOOK VERIFIED]', req.body);
+        res.json({ success: true, message: 'Webhook Processed' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 };
