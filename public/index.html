@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bengkel Pro SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { primary: '#EF4444', secondary: '#1F2937' } } } }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <nav class="bg-secondary text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-primary">Bengkel Pro SaaS</h1>
+            <div class="space-x-4">
+                <button onclick="render('services')" class="hover:text-primary">Layanan</button>
+                <button onclick="render('inventory')" class="hover:text-primary">Suku Cadang</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6">
+        <div id="app" class="bg-white p-6 rounded-lg shadow">
+            <h2 id="title" class="text-2xl font-bold mb-4">Dashboard</h2>
+            <div id="content">Memuat data...</div>
+        </div>
+    </main>
+
+    <script>
+        const data = {
+            services: [
+                { id: 1, vehicle_plate: "B 1234 XYZ", customer_name: "Andi", service_type: "Ganti Oli", mechanic: "Budi", cost: 150000, status: "done" },
+                { id: 2, vehicle_plate: "D 5678 ABC", customer_name: "Siti", service_type: "Tune Up", mechanic: "Joko", cost: 300000, status: "pending" }
+            ],
+            inventory: [
+                { id: 1, part_name: "Oli Mesin 1L", stock: 20, price: 85000 },
+                { id: 2, part_name: "Kampas Rem", stock: 10, price: 45000 }
+            ]
+        };
+
+        function render(entity) {
+            const container = document.getElementById('content');
+            const title = document.getElementById('title');
+            title.innerText = entity === 'services' ? 'Layanan Bengkel' : 'Manajemen Suku Cadang';
+            
+            let html = `<table class="w-full border-collapse"><thead><tr class="bg-gray-100">`;
+            const fields = entity === 'services' ? ['Plat', 'Pelanggan', 'Jenis', 'Mekanik', 'Biaya', 'Status'] : ['Nama', 'Stok', 'Harga'];
+            fields.forEach(f => html += `<th class="p-2 border">${f}</th>`);
+            html += `</tr></thead><tbody>`;
+            
+            data[entity].forEach(item => {
+                html += `<tr class="border-b">`;
+                Object.values(item).slice(1).forEach(val => html += `<td class="p-2 border text-center">${val}</td>`);
+                html += `</tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+        render('services');
+    </script>
+</body>
+</html>
