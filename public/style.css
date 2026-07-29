@@ -27,41 +27,14 @@ html { scroll-behavior: smooth; }
 }
 
 /* ===== SCROLL REVEAL ANIMATIONS ===== */
-.reveal {
-    opacity: 0;
-    transform: translateY(40px);
-    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.reveal.active {
+.reveal, .reveal-left, .reveal-right, .reveal-scale {
     opacity: 1;
     transform: translateY(0);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.reveal-left {
-    opacity: 0;
-    transform: translateX(-40px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
-}
-.reveal-left.active {
+.reveal.active, .reveal-left.active, .reveal-right.active, .reveal-scale.active {
     opacity: 1;
-    transform: translateX(0);
-}
-.reveal-right {
-    opacity: 0;
-    transform: translateX(40px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
-}
-.reveal-right.active {
-    opacity: 1;
-    transform: translateX(0);
-}
-.reveal-scale {
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.reveal-scale.active {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
 }
 
 /* Stagger delays */
